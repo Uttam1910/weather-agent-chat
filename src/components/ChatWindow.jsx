@@ -1,9 +1,9 @@
-// ChatWindow.jsx
+// src/components/ChatWindow.jsx
 import { useState, useEffect, useRef, useCallback } from 'react';
-import MessageBubble from './MessageBubble';
 import { FiSend, FiTrash2 } from 'react-icons/fi';
 import { FaRobot } from 'react-icons/fa';
 import { ImSpinner8 } from 'react-icons/im';
+import { IoWarning } from 'react-icons/io5';
 
 export default function ChatWindow() {
   const [messages, setMessages] = useState([]);
@@ -76,22 +76,20 @@ export default function ChatWindow() {
         const lines = chunk.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith("0:") || line.startsWith("f:") || line.startsWith("a:") || line.startsWith("9:") || line.startsWith("e:") || line.startsWith("d:")) {
+          if (line.startsWith("0:") || line.startsWith("f:") || line.startsWith("a:") || 
+              line.startsWith("9:") || line.startsWith("e:") || line.startsWith("d:")) {
             try {
               const jsonPart = line.substring(2);
               const parsed = JSON.parse(jsonPart);
 
-              // If it's a text token
               if (typeof parsed === "string") {
                 agentMessage += parsed;
               }
 
-              // If it's a tool result response
               if (parsed.result && parsed.result.conditions) {
                 const { temperature, feelsLike, humidity, windSpeed, windGust, conditions, location } = parsed.result;
                 agentMessage += `The current weather in ${location} is a ${conditions.toLowerCase()}. The temperature is ${temperature}°C but feels like ${feelsLike}°C due to the high humidity of ${humidity}%. Wind speed is ${windSpeed} km/h with gusts up to ${windGust} km/h.`;
               }
-
             } catch (err) {
               console.warn("Non-JSON or ignored line:", line);
             }
@@ -133,50 +131,81 @@ export default function ChatWindow() {
   }, [messages, isTyping]);
 
   return (
-    <div className="w-full max-w-2xl h-[80vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-      <div className="bg-gradient-to-r from-indigo-700 to-blue-600 p-4 flex items-center justify-between">
+    <div className="w-full max-w-3xl h-[85vh] bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200">
+      {/* Header */}
+      <div className="bg-white p-4 flex items-center justify-between border-b border-gray-200">
         <div className="flex items-center space-x-3">
-          <div className="bg-white/20 p-2 rounded-lg">
-            <FaRobot className="text-white text-xl" />
+          <div className="bg-blue-100 p-2 rounded-lg">
+            <FaRobot className="text-blue-600 text-xl" />
           </div>
           <div>
-            <h2 className="text-white font-semibold">Weather Assistant</h2>
-            <p className="text-blue-100 text-xs">{isTyping ? 'Typing...' : 'Online'}</p>
-          </div>
-        </div>
-        <button 
-          onClick={() => setMessages([])}
-          className="p-2 rounded-full hover:bg-white/20 transition-colors"
-          title="Clear chat"
-        >
-          <FiTrash2 className="text-white" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-gray-50 to-gray-100">
-        {messages.length === 0 && !isTyping ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-8 text-gray-500">
-            <FaRobot className="text-4xl text-indigo-500 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Ask me about the weather</h3>
-            <p className="max-w-md">
-              Examples: "What's the weather in Mumbai?" or "Will it rain tomorrow in Pune?"
+            <h2 className="text-gray-800 font-semibold text-lg">Weather Assistant</h2>
+            <p className="text-gray-500 text-sm flex items-center">
+              <span className={`w-2 h-2 rounded-full mr-2 ${isTyping ? 'bg-green-500 animate-pulse' : 'bg-blue-500'}`}></span>
+              {isTyping ? 'Typing...' : 'Online'}
             </p>
           </div>
+        </div>
+        <div className="flex space-x-2">
+          <button 
+            onClick={() => setMessages([])}
+            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+            title="Clear chat"
+          >
+            <FiTrash2 className="text-gray-600" />
+          </button>
+        </div>
+      </div>
+
+      {/* Chat messages area */}
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        {messages.length === 0 && !isTyping ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6">
+            <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-5">
+              <FaRobot className="text-3xl text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-3 text-gray-800">Ask me about the weather</h3>
+            <p className="text-gray-500 max-w-md mb-6">
+              Get real-time weather updates for any location
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-md">
+              {["What's the weather in Mumbai?", "Will it rain tomorrow in Pune?", "Weather in Delhi", "Humidity in Bangalore"].map((example, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInput(example)}
+                  className="bg-white border border-gray-200 rounded-xl p-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors shadow-sm text-left"
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 px-4 py-6">
             {messages.map((msg, idx) => (
-              <MessageBubble key={idx} role={msg.role} content={msg.content} />
-            ))}
-            {isTyping && (
-              <div className="flex items-center space-x-2">
-                <div className="bg-gray-200 border-2 border-white w-8 h-8 rounded-full flex items-center justify-center">
-                  <FaRobot className="text-gray-600" />
+              <div 
+                key={idx} 
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+              >
+                <div 
+                  className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-3 rounded-2xl ${
+                    msg.role === 'user' 
+                      ? 'bg-blue-600 text-white rounded-br-none' 
+                      : 'bg-white text-gray-700 border border-gray-200 rounded-bl-none'
+                  }`}
+                >
+                  {msg.content}
                 </div>
-                <div className="bg-gray-200 rounded-xl px-4 py-3">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150"></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-300"></div>
+              </div>
+            ))}
+            
+            {isTyping && (
+              <div className="flex items-start animate-fadeIn">
+                <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 rounded-bl-none">
+                  <div className="flex space-x-1.5">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
                 </div>
               </div>
@@ -186,31 +215,42 @@ export default function ChatWindow() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Error message */}
       {error && (
-        <div className="bg-red-100 text-red-800 p-2 text-center text-sm">{error}</div>
+        <div className="bg-red-50 border-t border-red-100 p-3 text-red-700 flex items-center text-sm animate-fadeIn">
+          <IoWarning className="mr-2 flex-shrink-0" />
+          {error}
+        </div>
       )}
 
+      {/* Input area */}
       <div className="p-4 bg-white border-t border-gray-200">
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-3">
           <textarea
             ref={inputRef}
             value={input}
             disabled={isLoading}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your question..."
+            placeholder="Ask about weather in your city..."
             rows={1}
-            className="flex-1 px-4 py-3 rounded-xl border border-gray-300 resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 border border-gray-200 resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-500"
           />
           <button
             onClick={sendMessage}
             disabled={isLoading || !input.trim()}
-            className="h-12 w-12 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow hover:bg-indigo-700 transition disabled:opacity-50"
+            className={`h-12 w-12 rounded-full flex items-center justify-center shadow transition-all ${
+              isLoading || !input.trim() 
+                ? 'bg-gray-200 text-gray-400' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+            }`}
           >
             {isLoading ? <ImSpinner8 className="animate-spin" /> : <FiSend />}
           </button>
         </div>
-        <div className="mt-2 text-xs text-gray-500 text-center">Press Enter to send, Shift+Enter for new line</div>
+        <div className="mt-2 text-xs text-gray-500 text-center">
+          Press Enter to send • Shift+Enter for new line
+        </div>
       </div>
     </div>
   );
