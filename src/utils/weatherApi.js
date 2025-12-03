@@ -14,7 +14,7 @@ const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
  * @returns {string|null} - Extracted city name or null
  */
 export const extractCityFromMessage = (message) => {
-  const lowerMessage = message.toLowerCase().trim();
+
   
   // Common patterns - order matters, more specific first
   const patterns = [
@@ -101,6 +101,109 @@ export const fetchWeatherData = async (city) => {
 };
 
 /**
+ * Fetch Air Quality Index (AQI)
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @returns {Promise<Object>} - AQI data
+ */
+export const fetchAirQuality = async (lat, lon) => {
+  const url = `${OPENWEATHER_BASE_URL}/air_pollution?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.list[0];
+  } catch (error) {
+    console.warn('AQI fetch error:', error);
+    return null;
+  }
+};
+
+/**
+ * Get city name from coordinates (Reverse Geocoding)
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @returns {Promise<string>} - City name
+ */
+export const fetchReverseGeocoding = async (lat, lon) => {
+  const url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${OPENWEATHER_API_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return data[0].name;
+    }
+    return null;
+  } catch (error) {
+    console.warn('Reverse geocoding error:', error);
+    return null;
+  }
+};
+
+/**
+ * Fetch 5-day forecast from OpenWeatherMap
+ * @param {string} city - City name
+ * @returns {Promise<Object>} - Forecast data
+ */
+export const fetchForecastData = async (city) => {
+  if (!city) {
+    throw new Error('City name is required');
+  }
+
+  const url = `${OPENWEATHER_BASE_URL}/forecast?q=${encodeURIComponent(city)}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+  
+  try {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      // We don't throw here to avoid breaking the main weather display if forecast fails
+      console.warn('Forecast fetch failed');
+      return null;
+    }
+
+    const data = await response.json();
+    return formatForecastResponse(data);
+  } catch (error) {
+    console.warn('Forecast fetch error:', error);
+    return null;
+  }
+};
+
+/**
+ * Format OpenWeatherMap forecast response
+ * @param {Object} data - Raw OpenWeatherMap API response
+ * @returns {Array} - Formatted forecast data (daily)
+ */
+const formatForecastResponse = (data) => {
+  // Filter for one reading per day (e.g., noon) to simulate daily forecast
+  // The API returns data every 3 hours
+  const dailyData = [];
+  const seenDates = new Set();
+
+  for (const item of data.list) {
+    const date = new Date(item.dt * 1000).toLocaleDateString();
+    
+    // We want the reading closest to noon (12:00)
+    // Or just the first reading of a new day if we haven't seen it
+    if (!seenDates.has(date)) {
+      seenDates.add(date);
+      dailyData.push({
+        date: new Date(item.dt * 1000),
+        temp: Math.round(item.main.temp),
+        conditions: item.weather[0].main,
+        icon: item.weather[0].icon,
+        description: item.weather[0].description
+      });
+    }
+    
+    if (dailyData.length >= 5) break;
+  }
+
+  return dailyData;
+};
+
+/**
  * Format OpenWeatherMap response to match our UI format
  * @param {Object} data - Raw OpenWeatherMap API response
  * @returns {Object} - Formatted weather data
@@ -120,6 +223,7 @@ const formatWeatherResponse = (data) => {
     sunrise: new Date(data.sys.sunrise * 1000),
     sunset: new Date(data.sys.sunset * 1000),
     icon: data.weather[0].icon,
+    coord: data.coord, // Add coordinates for AQI
   };
 };
 
