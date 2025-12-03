@@ -35,5 +35,9 @@
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.1.11",
     "vite": "^7.0.4"
+  },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
   }
 }
