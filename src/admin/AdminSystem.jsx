@@ -8,8 +8,6 @@ import SearchesView from './views/SearchesView';
 import FeatureUsageView from './views/FeatureUsageView';
 import ApiSystemView from './views/ApiSystemView';
 
-import { getAllRecords } from './analytics/analyticsStore';
-
 function AdminContent() {
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState('all');
@@ -22,29 +20,28 @@ function AdminContent() {
     apiRequests: [],
   });
 
-  const loadData = async () => {
-    const [visitors, sessions, pageViews, searches, featureUsage, apiRequests] = await Promise.all([
-      getAllRecords('visitors'),
-      getAllRecords('sessions'),
-      getAllRecords('page_views'),
-      getAllRecords('searches'),
-      getAllRecords('feature_usage'),
-      getAllRecords('api_requests'),
-    ]);
-
-    setAnalyticsData({
-      visitors,
-      sessions,
-      pageViews,
-      searches,
-      featureUsage,
-      apiRequests,
-    });
+  const loadCentralAnalytics = async () => {
+    try {
+      const res = await fetch('/api/admin/analytics/all');
+      if (res.ok) {
+        const data = await res.json();
+        setAnalyticsData({
+          visitors: data.visitors || [],
+          sessions: data.sessions || [],
+          pageViews: data.pageViews || [],
+          searches: data.searches || [],
+          featureUsage: data.featureUsage || [],
+          apiRequests: data.apiRequests || [],
+        });
+      }
+    } catch (err) {
+      console.warn('Error fetching server analytics:', err);
+    }
   };
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 5000); // Live refresh every 5s
+    loadCentralAnalytics();
+    const interval = setInterval(loadCentralAnalytics, 5000); // Poll central backend every 5s
     return () => clearInterval(interval);
   }, []);
 

@@ -1,10 +1,9 @@
 /**
  * tracker.js
  * Centralized, non-blocking telemetry engine for Weather Agent.
- * Collects anonymous visitor metrics, weather search events, feature interactions, and API consumption.
+ * Sends anonymous events asynchronously to POST /api/analytics/events.
+ * Weather features continue functioning normally even if analytics fails.
  */
-
-import { addRecord } from './analyticsStore';
 
 function getVisitorId() {
   let visitorId = localStorage.getItem('weather_visitor_id');
@@ -52,110 +51,77 @@ function getDeviceInfo() {
   return { deviceType, browser, os };
 }
 
-// Track Anonymous Visitor & Session entry
-export async function trackSession() {
+// Asynchronous non-blocking central event dispatcher
+function sendEvent(payload) {
   try {
     const visitorId = getVisitorId();
     const sessionId = getSessionId();
-    const now = new Date().toISOString();
     const { deviceType, browser, os } = getDeviceInfo();
 
-    await addRecord('visitors', {
-      id: visitorId,
-      firstSeenAt: localStorage.getItem('weather_first_seen') || now,
-      lastSeenAt: now,
-    });
-
-    if (!localStorage.getItem('weather_first_seen')) {
-      localStorage.setItem('weather_first_seen', now);
-    }
-
-    await addRecord('sessions', {
-      id: sessionId,
+    const fullData = {
       visitorId,
-      startedAt: now,
-      lastSeenAt: now,
+      sessionId,
       deviceType,
       browser,
       os,
       referrer: document.referrer ? new URL(document.referrer).hostname : 'Direct',
-    });
+      ...payload,
+    };
+
+    const blob = new Blob([JSON.stringify(fullData)], { type: 'application/json' });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/analytics/events', blob);
+    } else {
+      fetch('/api/analytics/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullData),
+        keepalive: true,
+      }).catch(() => {});
+    }
   } catch (err) {
-    // Non-blocking
+    // Analytics errors MUST NEVER break weather features
   }
 }
 
-// Track Public Page Views
-export async function trackPageView(path, title = '') {
-  try {
-    if (path.includes('/private-') || path.includes('/admin')) return; // Never track admin pages
-
-    const visitorId = getVisitorId();
-    const sessionId = getSessionId();
-    await trackSession();
-
-    await addRecord('page_views', {
-      visitorId,
-      sessionId,
-      path,
-      title: title || document.title,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    // Non-blocking
-  }
+// Public Page View Telemetry
+export function trackPageView(path, title = '') {
+  if (path.includes('/private-') || path.includes('/admin')) return;
+  sendEvent({
+    eventType: 'page_view',
+    path,
+    title: title || document.title,
+  });
 }
 
-// Track Weather Search Events
-export async function trackSearch({ city, region = '', country = '', source = 'manual', lat = null, lon = null }) {
-  try {
-    const visitorId = getVisitorId();
-    const sessionId = getSessionId();
-
-    await addRecord('searches', {
-      visitorId,
-      sessionId,
-      city: city || 'Unknown Location',
-      region,
-      country,
-      source, // 'current' | 'manual' | 'saved'
-      latitudeApprox: lat ? parseFloat(lat.toFixed(2)) : null,
-      longitudeApprox: lon ? parseFloat(lon.toFixed(2)) : null,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    // Non-blocking
-  }
+// Public Weather Search Telemetry
+export function trackSearch({ city, region = '', country = '', source = 'manual', lat = null, lon = null }) {
+  sendEvent({
+    eventType: 'weather_search',
+    city: city || 'Unknown Location',
+    region,
+    country,
+    source, // 'current' | 'manual' | 'saved'
+    lat: lat ? parseFloat(lat.toFixed(2)) : null,
+    lon: lon ? parseFloat(lon.toFixed(2)) : null,
+  });
 }
 
-// Track Feature Interactions
-export async function trackFeatureUse(featureId) {
-  try {
-    const visitorId = getVisitorId();
-    const sessionId = getSessionId();
-
-    await addRecord('feature_usage', {
-      visitorId,
-      sessionId,
-      featureId, // 'what_should_i_do_today' | 'activity_scores' | 'best_time' | 'travel_planner' | 'event_monitor' | etc.
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    // Non-blocking
-  }
+// Public Feature Interaction Telemetry
+export function trackFeatureUse(featureId) {
+  sendEvent({
+    eventType: 'feature_usage',
+    featureId,
+  });
 }
 
-// Track Open-Meteo & System API Requests
-export async function trackApiCall(endpoint, provider, durationMs, status = 'success') {
-  try {
-    await addRecord('api_requests', {
-      endpoint,
-      provider, // 'open-meteo-forecast' | 'open-meteo-air-quality' | 'open-meteo-marine' | 'open-meteo-archive'
-      durationMs,
-      status, // 'success' | 'error'
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    // Non-blocking
-  }
+// Open-Meteo & System API Request Telemetry
+export function trackApiCall(endpoint, provider, durationMs, status = 'success') {
+  sendEvent({
+    eventType: 'api_request',
+    endpoint,
+    provider,
+    durationMs,
+    status,
+  });
 }

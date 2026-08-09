@@ -2,71 +2,67 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AdminAuthContext = createContext();
 
-const ENV_USERNAME = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
-const ENV_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'WeatherAgentAdmin2026!';
-
 export function AdminAuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('weather_admin_session') === 'active';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const [failedAttempts, setFailedAttempts] = useState(() => {
-    return parseInt(localStorage.getItem('weather_admin_failed_attempts') || '0', 10);
-  });
-
-  const [lockoutUntil, setLockoutUntil] = useState(() => {
-    return parseInt(localStorage.getItem('weather_admin_lockout_until') || '0', 10);
-  });
-
-  useEffect(() => {
-    localStorage.setItem('weather_admin_failed_attempts', failedAttempts.toString());
-  }, [failedAttempts]);
-
-  useEffect(() => {
-    localStorage.setItem('weather_admin_lockout_until', lockoutUntil.toString());
-  }, [lockoutUntil]);
-
-  const login = async (username, password) => {
-    const now = Date.now();
-    if (lockoutUntil && now < lockoutUntil) {
-      const remainingSecs = Math.ceil((lockoutUntil - now) / 1000);
-      throw new Error(`Too many failed attempts. Try again in ${remainingSecs} seconds.`);
-    }
-
-    // Server-style credential validation against environment configuration
-    if (username === ENV_USERNAME && password === ENV_PASSWORD) {
-      setFailedAttempts(0);
-      setLockoutUntil(0);
-      sessionStorage.setItem('weather_admin_session', 'active');
-      setIsAuthenticated(true);
-      return true;
-    } else {
-      const nextAttempts = failedAttempts + 1;
-      setFailedAttempts(nextAttempts);
-
-      if (nextAttempts >= 5) {
-        const lockoutTime = now + 120000; // 2 minute lockout
-        setLockoutUntil(lockoutTime);
-        throw new Error('Too many failed attempts. Account locked for 2 minutes.');
+  // Verify server session on load
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/admin/auth/check', {
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsAuthenticated(data.authenticated === true);
+      } else {
+        setIsAuthenticated(false);
       }
-
-      throw new Error('Invalid credentials.');
+    } catch (err) {
+      setIsAuthenticated(false);
+    } finally {
+      setCheckingAuth(false);
     }
   };
 
-  const logout = () => {
-    sessionStorage.removeItem('weather_admin_session');
-    setIsAuthenticated(false);
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const login = async (username, password) => {
+    const res = await fetch('/api/admin/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Invalid credentials.');
+    }
+
+    setIsAuthenticated(true);
+    return true;
+  };
+
+  const logout = async () => {
+    try {
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
+    } catch (err) {
+      // ignore
+    } finally {
+      setIsAuthenticated(false);
+    }
   };
 
   return (
     <AdminAuthContext.Provider
       value={{
         isAuthenticated,
+        checkingAuth,
         login,
         logout,
-        failedAttempts,
-        lockoutUntil,
       }}
     >
       {children}
