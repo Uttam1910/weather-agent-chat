@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchWeatherData } from '../weather-intelligence/providers/WeatherProvider';
 import { analyzeTravelPlan } from '../weather-intelligence/travel/travelPlanner';
+import { trackFeatureUse } from '../admin/analytics/tracker';
 import SearchBar from './SearchBar';
 import { FaPlane, FaTimes, FaSuitcase, FaCheckCircle, FaStar, FaCalendarAlt } from 'react-icons/fa';
 import { ImSpinner8 } from 'react-icons/im';
@@ -10,6 +11,12 @@ export default function TravelPlannerModal({ isOpen, onClose }) {
   const [destination, setDestination] = useState('Goa');
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      trackFeatureUse('travel_planner');
+    }
+  }, [isOpen]);
 
   const handleSearch = async (cityInput) => {
     setLoading(true);

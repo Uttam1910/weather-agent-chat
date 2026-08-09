@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EVENT_TYPES, evaluateEventWeather } from '../weather-intelligence/events/eventMonitor';
 import { fetchWeatherData } from '../weather-intelligence/providers/WeatherProvider';
+import { trackFeatureUse } from '../admin/analytics/tracker';
 import SearchBar from './SearchBar';
 import { FaCalendarPlus, FaTimes, FaCheckCircle, FaExclamationTriangle, FaClock } from 'react-icons/fa';
 import { ImSpinner8 } from 'react-icons/im';
@@ -10,6 +11,12 @@ export default function EventMonitorModal({ isOpen, onClose }) {
   const [eventType, setEventType] = useState('wedding');
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      trackFeatureUse('event_monitor');
+    }
+  }, [isOpen]);
 
   const handleSearch = async (cityInput) => {
     setLoading(true);

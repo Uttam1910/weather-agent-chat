@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { fetchWeatherData, fetchReverseGeocoding } from '../weather-intelligence/providers/WeatherProvider';
+import { trackSearch } from '../admin/analytics/tracker';
 
 const UserContext = createContext();
 
@@ -112,6 +113,14 @@ export function UserProvider({ children }) {
             loading: false,
           });
 
+          trackSearch({
+            city: data.location,
+            country: data.country || '',
+            source: 'current',
+            lat: latitude,
+            lon: longitude,
+          });
+
           localStorage.setItem('weather_location_pref', 'current');
         } catch (err) {
           setLocationState({
@@ -160,6 +169,14 @@ export function UserProvider({ children }) {
         lon: data.coord?.lon || null,
         isCurrentLocation: false,
         loading: false,
+      });
+
+      trackSearch({
+        city: data.location,
+        country: data.country || '',
+        source: 'manual',
+        lat: data.coord?.lat || null,
+        lon: data.coord?.lon || null,
       });
 
       if (typeof cityOrCoords === 'string') {
