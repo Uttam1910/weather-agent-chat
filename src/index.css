@@ -1,17 +1,8 @@
 @import "tailwindcss";
 
-
 @theme {
   --font-sans: 'Outfit', 'Inter', system-ui, sans-serif;
   --font-body: 'Quicksand', sans-serif;
-
-  --color-magical-dark: #0f0c29;
-  --color-magical-purple: #302b63;
-  --color-magical-teal: #24243e;
-  
-  --color-glass-100: rgba(255, 255, 255, 0.1);
-  --color-glass-200: rgba(255, 255, 255, 0.2);
-  --color-glass-300: rgba(255, 255, 255, 0.3);
 
   --animate-fadeIn: fadeIn 0.5s ease-out forwards;
   --animate-slideIn: slideIn 0.4s ease-out forwards;
@@ -19,11 +10,8 @@
   --animate-float-slow: float 8s ease-in-out infinite;
   --animate-float-delayed: float 8s ease-in-out 4s infinite;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-shimmer: shimmer 2s linear infinite;
-  --animate-glow: glow 2s ease-in-out infinite alternate;
-
-  --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
-  --background-image-magical-gradient: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+  --animate-rain: rain 1s linear infinite;
+  --animate-snow: snow 4s linear infinite;
 
   @keyframes fadeIn {
     0% { opacity: 0; transform: translateY(10px); }
@@ -37,25 +25,26 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-20px); }
   }
-  @keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
+  @keyframes rain {
+    0% { transform: translateY(-20px); opacity: 0.8; }
+    100% { transform: translateY(100vh); opacity: 0.2; }
   }
-  @keyframes glow {
-    0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
-    100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 0, 255, 0.5); }
+  @keyframes snow {
+    0% { transform: translateY(-20px) translateX(0); opacity: 0.9; }
+    50% { transform: translateY(50vh) translateX(25px); opacity: 0.7; }
+    100% { transform: translateY(100vh) translateX(-25px); opacity: 0.2; }
   }
 }
 
 body {
-  @apply bg-gray-900 text-white antialiased overflow-x-hidden;
+  @apply text-white antialiased overflow-x-hidden bg-slate-950 min-h-screen selection:bg-purple-500/30;
   font-family: var(--font-sans);
 }
 
-/* Scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -63,10 +52,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.4);
 }

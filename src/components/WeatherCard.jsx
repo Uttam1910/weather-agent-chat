@@ -1,80 +1,91 @@
-import { FiWind, FiDroplet, FiSun, FiMoon } from 'react-icons/fi';
-import { WiDaySunny, WiCloudy, WiRain, WiSnow, WiThunderstorm, WiFog, WiDayHaze, WiBarometer } from 'react-icons/wi';
+import { motion } from 'framer-motion';
+import { WiStrongWind, WiHumidity, WiBarometer, WiDaySunny, WiRaindrop } from 'react-icons/wi';
+import { FaStar, FaRegStar, FaEye } from 'react-icons/fa';
+import { useUser } from '../context/UserContext';
 
-export default function WeatherCard({ weatherData }) {
+export default function WeatherCard({ weatherData, onClick }) {
+  const { formatTemp, formatSpeed, isFavorite, addFavorite, removeFavorite } = useUser();
+
   if (!weatherData) return null;
 
-  const { location, description, temperature, feelsLike, humidity, windSpeed, pressure, sunrise, sunset, icon } = weatherData;
-  const isDay = new Date().getHours() >= 6 && new Date().getHours() < 20;
+  const {
+    location,
+    description,
+    temperature,
+    feelsLike,
+    humidity,
+    windSpeed,
+    pressure,
+    visibility,
+    uvIndex,
+    icon,
+  } = weatherData;
 
-  const getWeatherIcon = (iconCode, size = "large") => {
-    const className = size === "large" 
-      ? "text-7xl text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.6)] animate-float" 
-      : "text-3xl text-white drop-shadow-md";
-    
-    if (!iconCode) return <WiDaySunny className={className} />;
-    if (iconCode.includes('01')) return <WiDaySunny className={className} />;
-    if (iconCode.includes('02')) return <WiDayHaze className={className} />;
-    if (iconCode.includes('03') || iconCode.includes('04')) return <WiCloudy className={className} />;
-    if (iconCode.includes('09') || iconCode.includes('10')) return <WiRain className={className} />;
-    if (iconCode.includes('11')) return <WiThunderstorm className={className} />;
-    if (iconCode.includes('13')) return <WiSnow className={className} />;
-    if (iconCode.includes('50')) return <WiFog className={className} />;
-    return <WiDaySunny className={className} />;
+  const fav = isFavorite(location);
+
+  const toggleFav = (e) => {
+    e.stopPropagation();
+    if (fav) removeFavorite(location);
+    else addFavorite(location);
   };
 
   return (
-    <div className="w-full animate-fadeIn">
-      {/* Main Weather Card */}
-      <div className="bg-glass-200 backdrop-blur-xl rounded-[2rem] p-6 border border-white/20 shadow-2xl mb-4 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-        
-        <div className="flex justify-between items-start relative z-10">
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-1 tracking-tight">{location}</h2>
-            <p className="text-lg text-white/80 capitalize font-medium flex items-center gap-2">
-              {description}
-              <span className="px-2 py-0.5 bg-white/10 rounded-full text-xs border border-white/10">
-                {isDay ? 'Day' : 'Night'}
-              </span>
-            </p>
-          </div>
-          <div className="text-right">
-             {getWeatherIcon(icon, "large")}
-          </div>
-        </div>
+    <motion.div
+      whileHover={{ y: -4, scale: 1.01 }}
+      onClick={onClick}
+      className="bg-white/10 backdrop-blur-2xl rounded-3xl p-6 border border-white/20 shadow-xl relative overflow-hidden group cursor-pointer"
+    >
+      <div className="absolute -top-16 -right-16 w-36 h-36 bg-purple-500/20 rounded-full blur-2xl group-hover:bg-purple-500/30 transition-all pointer-events-none" />
 
-        <div className="mt-6 flex items-baseline gap-2">
-           <span className="text-6xl font-bold text-white tracking-tighter">{Math.round(temperature)}°</span>
-           <span className="text-xl text-white/60 font-medium">Feels like {Math.round(feelsLike)}°</span>
+      {/* Top Header */}
+      <div className="flex justify-between items-start relative z-10">
+        <div>
+          <h2 className="text-2xl font-bold text-white tracking-tight">{location}</h2>
+          <p className="text-sm text-white/70 capitalize font-medium">{description}</p>
+        </div>
+        <button
+          onClick={toggleFav}
+          className="p-2.5 rounded-full bg-white/5 border border-white/10 text-yellow-400 hover:scale-110 transition-transform"
+        >
+          {fav ? <FaStar className="text-lg" /> : <FaRegStar className="text-lg text-white/50" />}
+        </button>
+      </div>
+
+      {/* Main Temperature & Weather Icon */}
+      <div className="flex items-center justify-between my-6 relative z-10">
+        <div>
+          <div className="text-6xl font-bold text-white tracking-tighter">{formatTemp(temperature)}</div>
+          <div className="text-xs text-white/60 mt-1 font-medium">Feels like {formatTemp(feelsLike)}</div>
+        </div>
+        <div className="w-20 h-20 flex items-center justify-center bg-white/5 rounded-2xl border border-white/10 p-1">
+          <img
+            src={`https://openweathermap.org/img/wn/${icon}@2x.png`}
+            alt={description}
+            className="w-16 h-16 filter drop-shadow-md"
+          />
         </div>
       </div>
 
-      {/* Grid Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-         <div className="bg-glass-100 p-4 rounded-2xl border border-white/10 flex flex-col items-center justify-center gap-1 hover:bg-glass-200 transition-colors">
-            <FiWind className="text-2xl text-blue-300 mb-1" />
-            <span className="text-xs text-white/60 uppercase tracking-wider">Wind</span>
-            <span className="text-lg font-bold text-white">{windSpeed} <span className="text-xs font-normal">km/h</span></span>
-         </div>
-         <div className="bg-glass-100 p-4 rounded-2xl border border-white/10 flex flex-col items-center justify-center gap-1 hover:bg-glass-200 transition-colors">
-            <FiDroplet className="text-2xl text-blue-400 mb-1" />
-            <span className="text-xs text-white/60 uppercase tracking-wider">Humidity</span>
-            <span className="text-lg font-bold text-white">{humidity}%</span>
-         </div>
-         <div className="bg-glass-100 p-4 rounded-2xl border border-white/10 flex flex-col items-center justify-center gap-1 hover:bg-glass-200 transition-colors">
-            <WiBarometer className="text-3xl text-green-300 mb-1" />
-            <span className="text-xs text-white/60 uppercase tracking-wider">Pressure</span>
-            <span className="text-lg font-bold text-white">{pressure}</span>
-         </div>
-         <div className="bg-glass-100 p-4 rounded-2xl border border-white/10 flex flex-col items-center justify-center gap-1 hover:bg-glass-200 transition-colors">
-            {isDay ? <FiSun className="text-2xl text-yellow-300 mb-1" /> : <FiMoon className="text-2xl text-purple-300 mb-1" />}
-            <span className="text-xs text-white/60 uppercase tracking-wider">{isDay ? 'Sunrise' : 'Sunset'}</span>
-            <span className="text-lg font-bold text-white">
-              {isDay ? sunrise?.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : sunset?.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-            </span>
-         </div>
+      {/* Metric Pills */}
+      <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/10 relative z-10 text-xs">
+        <div className="bg-white/5 rounded-xl p-2 text-center">
+          <WiStrongWind className="text-xl text-blue-300 mx-auto" />
+          <span className="text-white/50 block">Wind</span>
+          <span className="font-semibold text-white">{formatSpeed(windSpeed)}</span>
+        </div>
+
+        <div className="bg-white/5 rounded-xl p-2 text-center">
+          <WiHumidity className="text-xl text-cyan-300 mx-auto" />
+          <span className="text-white/50 block">Humidity</span>
+          <span className="font-semibold text-white">{humidity}%</span>
+        </div>
+
+        <div className="bg-white/5 rounded-xl p-2 text-center">
+          <WiDaySunny className="text-xl text-amber-300 mx-auto" />
+          <span className="text-white/50 block">UV Index</span>
+          <span className="font-semibold text-white">{uvIndex}</span>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

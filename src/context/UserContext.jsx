@@ -5,12 +5,20 @@ const UserContext = createContext();
 export function UserProvider({ children }) {
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('weather_favorites');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : ['London', 'New York', 'Tokyo', 'Paris'];
   });
 
   const [recents, setRecents] = useState(() => {
     const saved = localStorage.getItem('weather_recents');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : ['Mumbai', 'Sydney', 'Berlin'];
+  });
+
+  const [tempUnit, setTempUnit] = useState(() => {
+    return localStorage.getItem('weather_temp_unit') || 'C';
+  });
+
+  const [speedUnit, setSpeedUnit] = useState(() => {
+    return localStorage.getItem('weather_speed_unit') || 'kmh';
   });
 
   useEffect(() => {
@@ -21,20 +29,72 @@ export function UserProvider({ children }) {
     localStorage.setItem('weather_recents', JSON.stringify(recents));
   }, [recents]);
 
-  const addFavorite = (city) => {
-    if (!favorites.includes(city)) {
-      setFavorites(prev => [...prev, city]);
+  useEffect(() => {
+    localStorage.setItem('weather_temp_unit', tempUnit);
+  }, [tempUnit]);
+
+  useEffect(() => {
+    localStorage.setItem('weather_speed_unit', speedUnit);
+  }, [speedUnit]);
+
+  const toggleTempUnit = () => {
+    setTempUnit(prev => (prev === 'C' ? 'F' : 'C'));
+  };
+
+  const toggleSpeedUnit = () => {
+    setSpeedUnit(prev => (prev === 'kmh' ? 'mph' : 'kmh'));
+  };
+
+  const formatTemp = (celsius) => {
+    if (celsius === null || celsius === undefined) return '--';
+    if (tempUnit === 'F') {
+      return `${Math.round((celsius * 9) / 5 + 32)}°F`;
     }
+    return `${Math.round(celsius)}°C`;
+  };
+
+  const getTempNum = (celsius) => {
+    if (celsius === null || celsius === undefined) return 0;
+    if (tempUnit === 'F') {
+      return Math.round((celsius * 9) / 5 + 32);
+    }
+    return Math.round(celsius);
+  };
+
+  const formatSpeed = (kmh) => {
+    if (kmh === null || kmh === undefined) return '--';
+    if (speedUnit === 'mph') {
+      return `${Math.round(kmh * 0.621371)} mph`;
+    }
+    return `${Math.round(kmh)} km/h`;
+  };
+
+  const addFavorite = (city) => {
+    if (!city) return;
+    setFavorites(prev => {
+      const normalized = city.trim();
+      if (!prev.some(c => c.toLowerCase() === normalized.toLowerCase())) {
+        return [normalized, ...prev];
+      }
+      return prev;
+    });
   };
 
   const removeFavorite = (city) => {
-    setFavorites(prev => prev.filter(c => c !== city));
+    setFavorites(prev => prev.filter(c => c.toLowerCase() !== city.toLowerCase()));
+  };
+
+  const isFavorite = (city) => {
+    if (!city) return false;
+    return favorites.some(c => c.toLowerCase() === city.toLowerCase());
   };
 
   const addRecent = (city) => {
+    if (!city) return;
     setRecents(prev => {
-      const filtered = prev.filter(c => c !== city);
-      return [city, ...filtered].slice(0, 5); // Keep last 5
+      const normalized = city.trim();
+      const filtered = prev.filter(c => c.toLowerCase() !== normalized.toLowerCase());
+      return [normalized, ...filtered].slice(0, 6);
     });
   };
 
@@ -43,7 +103,24 @@ export function UserProvider({ children }) {
   };
 
   return (
-    <UserContext.Provider value={{ favorites, addFavorite, removeFavorite, recents, addRecent, clearRecents }}>
+    <UserContext.Provider
+      value={{
+        favorites,
+        addFavorite,
+        removeFavorite,
+        isFavorite,
+        recents,
+        addRecent,
+        clearRecents,
+        tempUnit,
+        speedUnit,
+        toggleTempUnit,
+        toggleSpeedUnit,
+        formatTemp,
+        getTempNum,
+        formatSpeed,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

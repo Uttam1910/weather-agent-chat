@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Rounded Base Icon Box -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  
+  <!-- Outer Ambient Glow Ring -->
+  <circle cx="210" cy="190" r="110" fill="#fbbf24" opacity="0.3" filter="url(#glow)"/>
+
+  <!-- Sun Circle -->
+  <circle cx="210" cy="190" r="85" fill="url(#sunGrad)"/>
+
+  <!-- Sun Rays -->
+  <g stroke="#f59e0b" stroke-width="12" stroke-linecap="round" opacity="0.8">
+    <line x1="210" y1="65" x2="210" y2="85" />
+    <line x1="210" y1="295" x2="210" y2="315" />
+    <line x1="85" y1="190" x2="105" y2="190" />
+    <line x1="315" y1="190" x2="335" y2="190" />
+    <line x1="122" y1="102" x2="136" y2="116" />
+    <line x1="284" y1="264" x2="298" y2="278" />
+    <line x1="122" y1="278" x2="136" y2="264" />
+    <line x1="284" y1="116" x2="298" y2="102" />
+  </g>
+
+  <!-- Cloud Shape -->
+  <path d="M 220 370 L 370 370 A 55 55 0 0 0 370 260 A 75 75 0 0 0 235 210 A 65 65 0 0 0 170 300 A 55 55 0 0 0 220 370 Z" fill="url(#cloudGrad)" filter="url(#glow)"/>
+
+  <!-- Weather Agent Lightning Sparkle -->
+  <path d="M 330 260 L 290 330 L 320 330 L 280 410 L 350 320 L 320 320 Z" fill="url(#boltGrad)"/>
+</svg>
