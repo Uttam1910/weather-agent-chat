@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { fetchWeatherData, fetchAirQuality } from '../utils/weatherApi';
+import { fetchWeatherData } from '../weather-intelligence/providers/WeatherProvider';
+import { scoreAllActivities } from '../weather-intelligence/scoring/activityScorer';
+import { calculateComfortIndex } from '../weather-intelligence/scoring/comfortIndex';
 import SearchBar from '../components/SearchBar';
 import WeatherCard from '../components/WeatherCard';
 import SEO from '../components/SEO';
 import { useUser } from '../context/UserContext';
 import { motion } from 'framer-motion';
-import { FaExchangeAlt, FaArrowUp, FaArrowDown, FaMinus } from 'react-icons/fa';
+import { FaExchangeAlt, FaArrowUp, FaArrowDown, FaMinus, FaTrophy } from 'react-icons/fa';
 
 export default function Compare() {
   const { formatTemp, formatSpeed } = useUser();
@@ -16,7 +18,6 @@ export default function Compare() {
   const [error1, setError1] = useState(null);
   const [error2, setError2] = useState(null);
 
-  // Load defaults (e.g. London & Tokyo)
   useEffect(() => {
     handleSearch1('London');
     handleSearch2('Tokyo');
@@ -72,26 +73,42 @@ export default function Compare() {
     );
   };
 
+  const comfort1 = city1Data ? calculateComfortIndex(city1Data).score : 0;
+  const comfort2 = city2Data ? calculateComfortIndex(city2Data).score : 0;
+
+  const winner = comfort1 > comfort2 ? city1Data?.location : comfort2 > comfort1 ? city2Data?.location : null;
+
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen pt-24 pb-16 px-4 max-w-6xl mx-auto space-y-8">
       <SEO
-        title="Compare City Weather - Weather Agent"
-        description="Side-by-side weather comparison between two cities with live metrics, temperature diffs, and humidity."
+        title="Compare Destinations - Weather Intelligence"
+        description="Compare weather comfort, outdoor activity suitability, and atmospheric metrics side-by-side."
       />
 
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-extrabold text-white tracking-tight flex items-center justify-center gap-3">
-          Dual City Weather Comparison <FaExchangeAlt className="text-purple-400 text-2xl" />
+          Destination Weather Comparison <FaExchangeAlt className="text-purple-400 text-2xl" />
         </h1>
-        <p className="text-white/60 text-sm">Compare live temperature, humidity, wind, pressure, and UV index head-to-head.</p>
+        <p className="text-white/60 text-sm">Head-to-head weather intelligence, comfort score comparison & outdoor suitability.</p>
       </div>
+
+      {/* Winner Recommendation Banner */}
+      {winner && (
+        <div className="bg-gradient-to-r from-emerald-900/60 to-purple-900/60 border border-emerald-500/40 rounded-3xl p-5 text-center flex flex-col sm:flex-row items-center justify-center gap-3 shadow-xl">
+          <FaTrophy className="text-amber-400 text-3xl" />
+          <div>
+            <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider block">Better Outdoor Destination Today</span>
+            <span className="text-xl font-extrabold text-white">{winner}</span>
+            <span className="text-xs text-white/70 block mt-0.5">Higher overall atmospheric comfort score ({Math.max(comfort1, comfort2)}/100)</span>
+          </div>
+        </div>
+      )}
 
       {/* Dual Search & Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* City 1 Column */}
         <div className="space-y-4">
           <div className="bg-white/10 backdrop-blur-xl p-5 rounded-3xl border border-white/20">
-            <h2 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-3">City 1</h2>
+            <h2 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-3">Destination 1</h2>
             <SearchBar onSearch={handleSearch1} isLoading={loading1} />
             {error1 && <p className="text-xs text-rose-400 mt-2">{error1}</p>}
           </div>
@@ -102,10 +119,9 @@ export default function Compare() {
           )}
         </div>
 
-        {/* City 2 Column */}
         <div className="space-y-4">
           <div className="bg-white/10 backdrop-blur-xl p-5 rounded-3xl border border-white/20">
-            <h2 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-3">City 2</h2>
+            <h2 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-3">Destination 2</h2>
             <SearchBar onSearch={handleSearch2} isLoading={loading2} />
             {error2 && <p className="text-xs text-rose-400 mt-2">{error2}</p>}
           </div>
@@ -124,7 +140,7 @@ export default function Compare() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white/10 backdrop-blur-2xl rounded-3xl p-6 border border-white/20 shadow-2xl space-y-4 overflow-hidden"
         >
-          <h3 className="text-xl font-bold text-white text-center">Head-to-Head Metric Matrix</h3>
+          <h3 className="text-xl font-bold text-white text-center">Head-to-Head Intelligence Matrix</h3>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-white">
@@ -132,23 +148,23 @@ export default function Compare() {
                 <tr className="border-b border-white/15 text-white/60 text-xs uppercase font-bold">
                   <th className="py-3 px-4">Metric</th>
                   <th className="py-3 px-4 text-center">{city1Data.location}</th>
-                  <th className="py-3 px-4 text-center">Difference</th>
+                  <th className="py-3 px-4 text-center">Variance</th>
                   <th className="py-3 px-4 text-center">{city2Data.location}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
                 <tr>
+                  <td className="py-3 px-4 font-semibold text-white/80">Weather Comfort Index</td>
+                  <td className="py-3 px-4 text-center font-bold text-emerald-300">{comfort1}/100</td>
+                  <td className="py-3 px-4 text-center">{getDiffText(comfort1, comfort2, 'pts')}</td>
+                  <td className="py-3 px-4 text-center font-bold text-emerald-300">{comfort2}/100</td>
+                </tr>
+
+                <tr>
                   <td className="py-3 px-4 font-semibold text-white/80">Temperature</td>
                   <td className="py-3 px-4 text-center font-bold text-lg">{formatTemp(city1Data.temperature)}</td>
                   <td className="py-3 px-4 text-center">{getDiffText(city1Data.temperature, city2Data.temperature, '°')}</td>
                   <td className="py-3 px-4 text-center font-bold text-lg">{formatTemp(city2Data.temperature)}</td>
-                </tr>
-
-                <tr>
-                  <td className="py-3 px-4 font-semibold text-white/80">Feels Like</td>
-                  <td className="py-3 px-4 text-center">{formatTemp(city1Data.feelsLike)}</td>
-                  <td className="py-3 px-4 text-center">{getDiffText(city1Data.feelsLike, city2Data.feelsLike, '°')}</td>
-                  <td className="py-3 px-4 text-center">{formatTemp(city2Data.feelsLike)}</td>
                 </tr>
 
                 <tr>
@@ -163,13 +179,6 @@ export default function Compare() {
                   <td className="py-3 px-4 text-center">{formatSpeed(city1Data.windSpeed)}</td>
                   <td className="py-3 px-4 text-center">{getDiffText(city1Data.windSpeed, city2Data.windSpeed, 'km/h')}</td>
                   <td className="py-3 px-4 text-center">{formatSpeed(city2Data.windSpeed)}</td>
-                </tr>
-
-                <tr>
-                  <td className="py-3 px-4 font-semibold text-white/80">Air Pressure</td>
-                  <td className="py-3 px-4 text-center">{city1Data.pressure} hPa</td>
-                  <td className="py-3 px-4 text-center">{getDiffText(city1Data.pressure, city2Data.pressure, 'hPa')}</td>
-                  <td className="py-3 px-4 text-center">{city2Data.pressure} hPa</td>
                 </tr>
 
                 <tr>

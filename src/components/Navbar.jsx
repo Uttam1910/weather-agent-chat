@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { WiDaySunny } from 'react-icons/wi';
-import { FaBars, FaTimes, FaPalette, FaThermometerHalf, FaSyncAlt } from 'react-icons/fa';
+import { FaBars, FaTimes, FaPalette, FaThermometerHalf, FaSyncAlt, FaMapMarkerAlt, FaSearch, FaStar } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
@@ -10,9 +10,20 @@ export default function Navbar() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [showLocationMenu, setShowLocationMenu] = useState(false);
   const { theme, changeTheme, isAutoCycling, resumeAutoCycle } = useTheme();
-  const { tempUnit, toggleTempUnit } = useUser();
+  const {
+    locationState,
+    detectCurrentLocation,
+    setManualLocation,
+    tempUnit,
+    toggleTempUnit,
+    savedLocations,
+    currentWeather,
+  } = useUser();
+
   const themeMenuRef = useRef(null);
+  const locMenuRef = useRef(null);
 
   const isActive = (path) => location.pathname === path;
 
@@ -39,10 +50,15 @@ export default function Navbar() {
       if (themeMenuRef.current && !themeMenuRef.current.contains(e.target)) {
         setShowThemeMenu(false);
       }
+      if (locMenuRef.current && !locMenuRef.current.contains(e.target)) {
+        setShowLocationMenu(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const displayLocationLabel = currentWeather?.location || locationState.city || 'Select Location';
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/60 backdrop-blur-2xl border-b border-white/10 shadow-lg">
@@ -55,6 +71,68 @@ export default function Navbar() {
             </div>
             <span className="text-xl font-bold text-white tracking-tight">Weather Agent</span>
           </Link>
+
+          {/* Location Badge Selector Control */}
+          <div className="relative" ref={locMenuRef}>
+            <button
+              onClick={() => setShowLocationMenu(!showLocationMenu)}
+              className="flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-full text-xs font-bold text-white transition-all shadow-sm max-w-[200px] sm:max-w-xs truncate"
+            >
+              <FaMapMarkerAlt className="text-rose-400 text-xs flex-shrink-0" />
+              <span className="truncate">{displayLocationLabel}</span>
+              {locationState.isCurrentLocation && (
+                <span className="text-[10px] bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded-md font-semibold hidden sm:inline">
+                  Current
+                </span>
+              )}
+            </button>
+
+            {/* Location Selector Menu */}
+            {showLocationMenu && (
+              <div className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-64 bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-2 shadow-2xl z-50 animate-fadeIn space-y-2">
+                <div className="text-[11px] font-semibold text-white/40 px-3 py-1 uppercase tracking-wider">
+                  Location Control
+                </div>
+
+                {/* Use Current Location Action */}
+                <button
+                  onClick={() => {
+                    detectCurrentLocation();
+                    setShowLocationMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2.5 text-xs font-semibold rounded-xl bg-purple-600/30 hover:bg-purple-600 text-white transition-all flex items-center gap-2 border border-purple-400/30"
+                >
+                  <FaMapMarkerAlt className="text-rose-400" />
+                  <span>Use My Current Location</span>
+                </button>
+
+                {/* Saved Locations List */}
+                {savedLocations.length > 0 && (
+                  <div className="space-y-1 pt-1 border-t border-white/10">
+                    <div className="text-[10px] font-semibold text-white/40 px-3 py-0.5 uppercase">
+                      Saved Places
+                    </div>
+                    {savedLocations.map((loc) => (
+                      <button
+                        key={loc.id}
+                        onClick={() => {
+                          setManualLocation(loc.city);
+                          setShowLocationMenu(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white rounded-xl transition-all flex items-center justify-between"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <FaStar className="text-amber-400 text-[10px]" />
+                          <span>{loc.label}</span>
+                        </span>
+                        <span className="text-[11px] text-white/50">{loc.city}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
@@ -94,7 +172,7 @@ export default function Navbar() {
               >
                 <FaPalette className="text-purple-300 text-xs" />
                 <span className="hidden sm:inline capitalize">
-                  {theme === 'weather-auto' && isAutoCycling ? '⚡ Auto Cycle' : theme.replace('-auto', '')}
+                  {theme === 'weather-auto' && isAutoCycling ? '⚡ Auto' : theme.replace('-auto', '')}
                 </span>
                 {theme === 'weather-auto' && isAutoCycling && (
                   <FaSyncAlt className="text-[10px] text-amber-300 animate-spin" />

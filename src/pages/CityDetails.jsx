@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchWeatherData, fetchAirQuality } from '../utils/weatherApi';
+import { fetchWeatherData, fetchAirQualityData } from '../weather-intelligence/providers/WeatherProvider';
 import WeatherDashboard from '../components/WeatherDashboard';
 import ErrorMessage from '../components/ErrorMessage';
 import SEO from '../components/SEO';
@@ -24,7 +24,7 @@ export default function CityDetails() {
         const weatherData = await fetchWeatherData(city);
         let aqiData = null;
         if (weatherData.coord) {
-          aqiData = await fetchAirQuality(weatherData.coord.lat, weatherData.coord.lon);
+          aqiData = await fetchAirQualityData(weatherData.coord.lat, weatherData.coord.lon);
         }
 
         setWeather(weatherData);
@@ -51,7 +51,7 @@ export default function CityDetails() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
         <ImSpinner8 className="text-5xl text-purple-400 animate-spin" />
-        <p className="text-white/70 text-sm font-medium">Fetching real-time weather & air quality data...</p>
+        <p className="text-white/70 text-sm font-medium">Fetching real-time weather & decision metrics...</p>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export default function CityDetails() {
       <div className="min-h-screen pt-28 px-4 max-w-xl mx-auto space-y-6">
         <ErrorMessage message={error} onRetry={() => navigate('/')} />
         <div className="text-center">
-          <p className="text-white/60 text-xs mb-3">Try searching another city:</p>
+          <p className="text-white/60 text-xs mb-3">Try searching another location:</p>
           <SearchBar onSearch={handleSearchNew} isLoading={false} />
         </div>
       </div>
@@ -71,8 +71,8 @@ export default function CityDetails() {
   return (
     <div className="min-h-screen pt-24 pb-12">
       <SEO
-        title={`Weather in ${weather?.location}`}
-        description={`Detailed 24-hour weather forecast, air quality index, and AI weather insights for ${weather?.location}.`}
+        title={`Weather Intelligence in ${weather?.location}`}
+        description={`Decision weather metrics, activity scores, 24h charts, and AQI for ${weather?.location}.`}
       />
       <div className="mb-6 px-4 max-w-xl mx-auto">
         <SearchBar onSearch={handleSearchNew} isLoading={false} />

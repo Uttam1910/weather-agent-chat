@@ -7,7 +7,7 @@ export default function AiWeatherAssistant({ weatherData }) {
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
-      text: `Hello! I'm your Weather AI Agent. Ask me anything about current conditions in ${weatherData?.location || 'your area'}, outfit recommendations, or travel advice!`,
+      text: `Hello! I'm your Weather Insights Assistant. Ask me anything about current conditions in ${weatherData?.location || 'your area'}, outfit recommendations, or travel advice!`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -83,7 +83,7 @@ export default function AiWeatherAssistant({ weatherData }) {
         </div>
         <div>
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            Weather AI Agent <FaCheckCircle className="text-emerald-400 text-xs" />
+            Weather Insights Assistant <FaCheckCircle className="text-emerald-400 text-xs" />
           </h3>
           <p className="text-xs text-white/60">Instant answers, clothing advice & lifestyle tips</p>
         </div>
@@ -138,7 +138,7 @@ export default function AiWeatherAssistant({ weatherData }) {
         {loading && (
           <div className="flex gap-2 items-center text-xs text-white/50 pl-2">
             <ImSpinner8 className="animate-spin text-purple-400" />
-            <span>AI is analyzing weather metrics...</span>
+            <span>Analyzing atmospheric parameters...</span>
           </div>
         )}
       </div>
@@ -155,7 +155,7 @@ export default function AiWeatherAssistant({ weatherData }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask AI Weather Agent..."
+          placeholder="Ask Weather Insights Assistant..."
           className="flex-1 bg-white/10 border border-white/15 rounded-2xl px-4 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
         />
         <button

@@ -15,7 +15,7 @@ export default function Footer() {
             <span className="text-xl font-bold text-white tracking-tight">Weather Agent</span>
           </Link>
           <p className="text-xs text-white/60 leading-relaxed">
-            Real-time weather insights, 24-hour hourly graphs, air quality monitoring, and intelligent AI forecasting powered by Open-Meteo.
+            Real-time weather insights, 24-hour hourly graphs, air quality monitoring, and weather decision intelligence powered by Open-Meteo.
           </p>
         </div>
 

@@ -53,9 +53,9 @@ export default function SEO({ title, description, keywords, image, type }) {
 }
 
 SEO.defaultProps = {
-  title: 'Weather Agent - Live Forecasts & AI Insights',
-  description: 'Experience real-time weather forecasting with Weather Agent. Features live Open-Meteo updates, 24-hour interactive graphs, AQI air quality monitoring, and AI weather recommendations.',
-  keywords: 'weather, forecast, air quality index, hourly weather chart, weather AI agent, Open-Meteo, weather comparison',
+  title: 'Weather Agent - Weather Intelligence Platform',
+  description: 'Experience real-time weather forecasting with Weather Agent. Features live Open-Meteo updates, 24-hour interactive graphs, AQI air quality monitoring, and decision support recommendations.',
+  keywords: 'weather, forecast, air quality index, hourly weather chart, weather intelligence, Open-Meteo, weather comparison',
   type: 'website',
   image: null,
 };
